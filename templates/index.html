@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PaveDetect AI — Sistema de Detección de Pavimentos</title>
+  <meta name="description" content="Dashboard inteligente para el reconocimiento y clasificación de fisuras y baches en pavimentos urbanos mediante Inteligencia Artificial." />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<!-- ══════════════════════════ SIDEBAR ══════════════════════════ -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">
+      <i class="bi bi-geo-alt-fill"></i>
+    </div>
+    <div class="logo-text">
+      <span class="logo-brand">PaveDetect</span>
+      <span class="logo-sub">AI System</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <span class="nav-section-label">Principal</span>
+    <a href="#" class="nav-item active" data-tab="dashboard" id="nav-dashboard">
+      <i class="bi bi-grid-1x2-fill"></i>
+      <span>Dashboard</span>
+    </a>
+    <a href="#" class="nav-item" data-tab="inferencia" id="nav-inferencia">
+      <i class="bi bi-camera-fill"></i>
+      <span>Analizar Imagen</span>
+    </a>
+
+    <span class="nav-section-label">Modelos</span>
+    <a href="#" class="nav-item" data-tab="entrenamiento" id="nav-entrenamiento">
+      <i class="bi bi-cpu-fill"></i>
+      <span>Entrenar CNN</span>
+    </a>
+    <a href="#" class="nav-item" data-tab="regresion" id="nav-regresion">
+      <i class="bi bi-graph-up-arrow"></i>
+      <span>Regresión Lineal</span>
+    </a>
+
+    <span class="nav-section-label">Datos</span>
+    <a href="#" class="nav-item" data-tab="historial" id="nav-historial">
+      <i class="bi bi-clock-history"></i>
+      <span>Historial</span>
+    </a>
+    <a href="#" class="nav-item" data-tab="sesiones" id="nav-sesiones">
+      <i class="bi bi-archive-fill"></i>
+      <span>Sesiones</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="version-badge">v1.0.0 — Local</div>
+  </div>
+</aside>
+
+<!-- ══════════════════════════ MAIN CONTENT ══════════════════════════ -->
+<main class="main-content" id="mainContent">
+
+  <!-- ── TOP BAR ── -->
+  <header class="topbar">
+    <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+      <i class="bi bi-list"></i>
+    </button>
+    <div class="topbar-title" id="topbarTitle">Dashboard</div>
+    <div class="topbar-actions">
+      <div class="status-indicator" id="statusIndicator">
+        <span class="status-dot active"></span>
+        <span class="status-text">Sistema activo</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- TAB: DASHBOARD                                     -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="tab-content active" id="tab-dashboard">
+    <div class="page-header">
+      <h1 class="page-title">Panel de Control</h1>
+      <p class="page-subtitle">Monitoreo en tiempo real del sistema de detección de pavimentos</p>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid" id="kpiGrid">
+      <div class="kpi-card" id="kpi-total">
+        <div class="kpi-icon" style="--kpi-color: #6366f1;">
+          <i class="bi bi-images"></i>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value" id="kpiTotal">—</span>
+          <span class="kpi-label">Imágenes Analizadas</span>
+        </div>
+      </div>
+      <div class="kpi-card" id="kpi-confianza">
+        <div class="kpi-icon" style="--kpi-color: #10b981;">
+          <i class="bi bi-patch-check-fill"></i>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value" id="kpiConfianza">—</span>
+          <span class="kpi-label">Confianza Promedio</span>
+        </div>
+      </div>
+      <div class="kpi-card" id="kpi-entrenamientos">
+        <div class="kpi-icon" style="--kpi-color: #f59e0b;">
+          <i class="bi bi-cpu"></i>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value" id="kpiEntrenamientos">—</span>
+          <span class="kpi-label">Entrenamientos</span>
+        </div>
+      </div>
+      <div class="kpi-card" id="kpi-modelo">
+        <div class="kpi-icon" style="--kpi-color: #ec4899;">
+          <i class="bi bi-robot"></i>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-value" id="kpiModelo">—</span>
+          <span class="kpi-label">Estado del Modelo</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gráficos del dashboard -->
+    <div class="charts-grid">
+      <div class="card chart-card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="bi bi-pie-chart-fill"></i> Distribución por Categoría</h3>
+        </div>
+        <div class="card-body">
+          <canvas id="chartCategorias" height="260"></canvas>
+        </div>
+      </div>
+
+      <div class="card chart-card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="bi bi-bar-chart-fill"></i> Actividad Reciente</h3>
+        </div>
+        <div class="card-body">
+          <canvas id="chartActividad" height="260"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Últimas imágenes procesadas -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h3 class="card-title"><i class="bi bi-collection-fill"></i> Últimas Imágenes Procesadas</h3>
+        <button class="btn btn-sm btn-ghost" onclick="cargarHistorial()"><i class="bi bi-arrow-clockwise"></i> Actualizar</button>
+      </div>
+      <div class="card-body">
+        <div class="img-gallery" id="imgGallery">
+          <div class="empty-state"><i class="bi bi-images"></i><p>Aún no hay imágenes procesadas</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- TAB: INFERENCIA                                    -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="tab-content" id="tab-inferencia">
+    <div class="page-header">
+      <h1 class="page-title">Analizar Imagen</h1>
+      <p class="page-subtitle">Carga una imagen de pavimento para clasificarla con la CNN</p>
+    </div>
+
+    <div class="inferencia-layout">
+      <!-- Panel de carga -->
+      <div class="card upload-card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="bi bi-cloud-arrow-up-fill"></i> Cargar Imagen</h3>
+        </div>
+        <div class="card-body">
+          <div class="drop-zone" id="dropZone">
+            <input type="file" id="inputImagen" accept="image/*" hidden />
+            <div class="drop-zone-content" id="dropZoneContent">
+              <div class="drop-icon"><i class="bi bi-cloud-upload"></i></div>
+              <p class="drop-title">Arrastra tu imagen aquí</p>
+              <p class="drop-sub">o haz clic para seleccionar</p>
+              <p class="drop-formats">PNG, JPG, JPEG, WEBP · Máx 16 MB</p>
+            </div>
+            <img id="previewImg" class="preview-img hidden" alt="Vista previa" />
+          </div>
+
+          <div class="upload-actions">
+            <button class="btn btn-outline" id="btnSeleccionar">
+              <i class="bi bi-folder2-open"></i> Seleccionar Archivo
+            </button>
+            <button class="btn btn-primary" id="btnAnalizar" disabled>
+              <i class="bi bi-cpu"></i> Analizar con IA
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel de resultados -->
+      <div class="card result-card" id="resultCard">
+        <div class="card-header">
+          <h3 class="card-title"><i class="bi bi-clipboard-data-fill"></i> Resultado del Análisis</h3>
+        </div>
+        <div class="card-body" id="resultBody">
+          <div class="empty-state">
+            <i class="bi bi-cpu"></i>
+            <p>Carga una imagen para ver el resultado</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- TAB: ENTRENAMIENTO CNN                             -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="tab-content" id="tab-entrenamiento">
+    <div class="page-header">
+      <h1 class="page-title">Entrenar Red Neuronal</h1>
+      <p class="page-subtitle">Sube tus imágenes por clase y entrena la CNN con tu propio dataset</p>
+    </div>
+
+    <!-- ── PASO 1: Cargar Dataset ── -->
+    <div class="step-banner">
+      <span class="step-num">1</span>
+      <div>
+        <strong>Cargar Imágenes de Entrenamiento</strong>
+        <small>Sube las imágenes de cada categoría. El sistema las divide automáticamente 80% entrenamiento / 20% validación.</small>
+      </div>
+    </div>
+
+    <div class="dataset-upload-grid">
+      <!-- Card: Baches -->
+      <div class="dataset-card" id="dcBache">
+        <div class="dataset-card-header" style="--cls-color:#ef4444">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span>Baches</span>
+          <span class="dataset-count" id="countBache">0 imgs</span>
+        </div>
+        <div class="drop-zone-small" id="dzBache" data-clase="bache">
+          <input type="file" id="inputBache" accept="image/*" multiple hidden />
+          <i class="bi bi-cloud-upload"></i>
+          <p>Arrastra o haz clic</p>
+          <small>JPG, PNG, WEBP</small>
+        </div>
+        <div class="dataset-card-stats" id="statsBache">
+          <span class="stat-chip train">Train: 0</span>
+          <span class="stat-chip val">Val: 0</span>
+        </div>
+        <button class="btn btn-sm btn-outline w-full mt-2" onclick="seleccionarDataset('bache')">
+          <i class="bi bi-folder2-open"></i> Seleccionar archivos
+        </button>
+      </div>
+
+      <!-- Card: Sano -->
+      <div class="dataset-card" id="dcSano">
+        <div class="dataset-card-header" style="--cls-color:#10b981">
+          <i class="bi bi-check-circle-fill"></i>
+          <span>Pavimento Sano</span>
+          <span class="dataset-count" id="countSano">0 imgs</span>
+        </div>
+        <div class="drop-zone-small" id="dzSano" data-clase="sano">
+          <input type="file" id="inputSano" accept="image/*" multiple hidden />
+          <i class="bi bi-cloud-upload"></i>
+          <p>Arrastra o haz clic</p>
+          <small>JPG, PNG, WEBP</small>
+        </div>
+        <div class="dataset-card-stats" id="statsSano">
+          <span class="stat-chip train">Train: 0</span>
+          <span class="stat-chip val">Val: 0</span>
+        </div>
+        <button class="btn btn-sm btn-outline w-full mt-2" onclick="seleccionarDataset('sano')">
+          <i class="bi bi-folder2-open"></i> Seleccionar archivos
+        </button>
+      </div>
+
+      <!-- Card: Fisura (opcional) -->
+      <div class="dataset-card" id="dcFisura">
+        <div class="dataset-card-header" style="--cls-color:#f59e0b">
+          <i class="bi bi-lightning-fill"></i>
+          <span>Fisuras <small style="opacity:.6">(opcional)</small></span>
+          <span class="dataset-count" id="countFisura">0 imgs</span>
+        </div>
+        <div class="drop-zone-small" id="dzFisura" data-clase="fisura">
+          <input type="file" id="inputFisura" accept="image/*" multiple hidden />
+          <i class="bi bi-cloud-upload"></i>
+          <p>Arrastra o haz clic</p>
+          <small>JPG, PNG, WEBP</small>
+        </div>
+        <div class="dataset-card-stats" id="statsFisura">
+          <span class="stat-chip train">Train: 0</span>
+          <span class="stat-chip val">Val: 0</span>
+        </div>
+        <button class="btn btn-sm btn-outline w-full mt-2" onclick="seleccionarDataset('fisura')">
+          <i class="bi bi-folder2-open"></i> Seleccionar archivos
+        </button>
+      </div>
+    </div>
+
+    <!-- Barra de progreso de carga -->
+    <div id="uploadProgressBar" class="upload-progress hidden">
+      <div class="upload-progress-inner">
+        <i class="bi bi-arrow-up-circle"></i>
+        <span id="uploadProgressTxt">Subiendo imágenes...</span>
+        <div class="progress-main" style="flex:1"><div class="progress-main-fill" id="uploadFill" style="width:0%"></div></div>
+        <span id="uploadPct">0%</span>
+      </div>
+    </div>
+
+    <!-- Resumen del dataset actual -->
+    <div class="card mt-4" id="datasetSummaryCard">
+      <div class="card-header">
+        <h3 class="card-title"><i class="bi bi-folder-fill"></i> Estado del Dataset</h3>
+        <button class="btn btn-sm btn-ghost" onclick="cargarInfoDataset()"><i class="bi bi-arrow-clockwise"></i> Actualizar</button>
+      </div>
+      <div class="card-body" id="datasetSummaryBody">
+        <div class="empty-state"><i class="bi bi-folder"></i><p>Aún no hay imágenes cargadas</p></div>
+      </div>
+    </div>
+
+    <!-- ── PASO 2: Configurar y Entrenar ── -->
+    <div class="step-banner mt-4">
+      <span class="step-num">2</span>
+      <div>
+        <strong>Configurar y Entrenar la CNN</strong>
+        <small>Una vez cargadas las imágenes, ajusta los parámetros y lanza el entrenamiento.</small>
+      </div>
+    </div>
+
+    <div class="train-layout">
+      <!-- Configuración -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="bi bi-sliders"></i> Parámetros</h3>
+        </div>
+        <div class="card-body">
+          <div class="form-group">
+            <label class="form-label" for="trainEpochs">Épocas</label>
+            <input type="number" class="form-input" id="trainEpochs" value="20" min="5" max="100" />
+            <span class="form-hint">Más épocas = más precisión (pero más tiempo)</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="trainBatch">Batch Size</label>
+            <input type="number" class="form-input" id="trainBatch" value="16" min="4" max="64" step="4" />
+            <span class="form-hint">Recomendado 16 para datasets pequeños (200 imgs)</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Fuente de Datos</label>
+            <div class="toggle-group">
+              <label class="toggle-item">
+                <input type="radio" name="fuenteDatos" value="real" id="fuenteReal" checked />
+                <span class="toggle-label">
+                  <i class="bi bi-folder-fill"></i>
+                  <strong>Mis Imágenes (recomendado)</strong>
+                  <small>Usa las imágenes que cargaste arriba</small>
+                </span>
+              </label>
+              <label class="toggle-item">
+                <input type="radio" name="fuenteDatos" value="demo" id="fuenteDemo" />
+                <span class="toggle-label">
+                  <i class="bi bi-magic"></i>
+                  <strong>Demo Sintético</strong>
+                  <small>Genera datos artificiales para probar el sistema</small>
+                </span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Arquitectura CNN -->
+          <div class="arch-info">
+            <h4 class="arch-title"><i class="bi bi-diagram-3-fill"></i> Arquitectura CNN</h4>
+            <div class="arch-layers">
+              <div class="layer-badge input">Input 128×128×3</div>
+              <div class="layer-arrow"><i class="bi bi-arrow-down"></i></div>
+              <div class="layer-badge conv">Conv2D(32) + BN + MaxPool</div>
+              <div class="layer-arrow"><i class="bi bi-arrow-down"></i></div>
+              <div class="layer-badge conv">Conv2D(64) + BN + MaxPool</div>
+              <div class="layer-arrow"><i class="bi bi-arrow-down"></i></div>
+              <div class="layer-badge conv">Conv2D(128) + BN + MaxPool</div>
+              <div class="layer-arrow"><i class="bi bi-arrow-down"></i></div>
+              <div class="layer-badge dense">GAP → Dense(256) → Dropout</div>
+              <div class="layer-arrow"><i class="bi bi-arrow-down"></i></div>
+              <div class="layer-badge output" id="archOutput">Softmax(N clases)</div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary btn-full" id="btnEntrenar">
+            <i class="bi bi-play-fill"></i> Iniciar Entrenamiento
+          </button>
+        </div>
+      </div>
+
+      <!-- Progreso -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="bi bi-activity"></i> Progreso del Entrenamiento</h3>
+        </div>
+        <div class="card-body">
+          <div id="trainProgress" class="train-progress-container">
+            <div class="train-idle">
+              <i class="bi bi-cpu"></i>
+              <p>El entrenamiento no ha iniciado</p>
+            </div>
+          </div>
+          <div id="trainMetricsChart" class="hidden">
+            <canvas id="chartEntrenamiento" height="200"></canvas>
+          </div>
+          <div id="trainGrafico" class="hidden mt-4">
+            <h4 style="color: var(--text-secondary); margin-bottom: 12px; font-size: 14px;">
+              <i class="bi bi-graph-up"></i> Curvas guardadas por Matplotlib
+            </h4>
+            <img id="imgGraficoEntrenamiento" class="w-full rounded-lg" alt="Grafico de entrenamiento" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- TAB: REGRESIÓN LINEAL                              -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="tab-content" id="tab-regresion">
+    <div class="page-header">
+      <h1 class="page-title">Regresión Lineal</h1>
+      <p class="page-subtitle">Predicción del índice de deterioro del pavimento según su antigüedad</p>
+    </div>
+
+    <div class="reg-layout">
+      <!-- Panel de control -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="bi bi-gear-fill"></i> Control del Modelo</h3>
+        </div>
+        <div class="card-body">
+          <button class="btn btn-primary btn-full mb-3" id="btnEntrenarRegresion">
+            <i class="bi bi-graph-up-arrow"></i> Entrenar Regresión
+          </button>
+          <div id="regEcuacion" class="ecuacion-display hidden">
+            <span class="ecuacion-label">Ecuación del Modelo</span>
+            <code class="ecuacion-code" id="regEcuacionTxt">y = mx + b</code>
+            <div class="reg-metrics" id="regMetrics"></div>
+          </div>
+
+          <hr class="divider" />
+
+          <h4 class="subsection-title">Predecir Deterioro</h4>
+          <div class="form-group">
+            <label class="form-label" for="regAnios">Años de Antigüedad del Pavimento</label>
+            <input type="number" class="form-input" id="regAnios" value="5" min="0" max="50" step="0.5" />
+          </div>
+          <button class="btn btn-accent btn-full" id="btnPredecir">
+            <i class="bi bi-bullseye"></i> Predecir
+          </button>
+          <div id="regResultado" class="reg-resultado hidden"></div>
+
+          <hr class="divider" />
+
+          <h4 class="subsection-title">Agregar Dato</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="nuevoDatoAnio">Años</label>
+              <input type="number" class="form-input" id="nuevoDatoAnio" placeholder="5" min="0" max="50" />
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="nuevoDatoIndice">Índice (0–10)</label>
+              <input type="number" class="form-input" id="nuevoDatoIndice" placeholder="3.5" min="0" max="10" step="0.1" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="nuevoDatoZona">Zona</label>
+            <input type="text" class="form-input" id="nuevoDatoZona" placeholder="Zona A" />
+          </div>
+          <button class="btn btn-outline btn-full" id="btnAgregarDato">
+            <i class="bi bi-plus-circle"></i> Agregar Dato
+          </button>
+        </div>
+      </div>
+
+      <!-- Gráfico de regresión -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title"><i class="bi bi-graph-up"></i> Visualización de Regresión</h3>
+        </div>
+        <div class="card-body">
+          <div id="regGraficoContainer">
+            <div class="empty-state">
+              <i class="bi bi-graph-up-arrow"></i>
+              <p>Entrena el modelo para ver el gráfico</p>
+            </div>
+          </div>
+          <canvas id="chartRegresion" height="300" class="hidden"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabla de datos -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h3 class="card-title"><i class="bi bi-table"></i> Datos de Entrenamiento</h3>
+        <button class="btn btn-sm btn-ghost" onclick="cargarDatosRegresion()"><i class="bi bi-arrow-clockwise"></i></button>
+      </div>
+      <div class="card-body">
+        <div class="table-wrapper">
+          <table class="data-table" id="tablaRegresion">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Años de Antigüedad</th>
+                <th>Índice de Deterioro</th>
+                <th>Área Daño (m²)</th>
+                <th>Zona</th>
+                <th>Registrado</th>
+              </tr>
+            </thead>
+            <tbody id="tablaRegresionBody">
+              <tr><td colspan="6" class="table-empty">Cargando datos...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- TAB: HISTORIAL                                     -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="tab-content" id="tab-historial">
+    <div class="page-header">
+      <h1 class="page-title">Historial de Análisis</h1>
+      <p class="page-subtitle">Registro completo de todas las imágenes procesadas</p>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title"><i class="bi bi-clock-history"></i> Imágenes Procesadas</h3>
+        <button class="btn btn-sm btn-ghost" onclick="cargarTablaHistorial()"><i class="bi bi-arrow-clockwise"></i> Actualizar</button>
+      </div>
+      <div class="card-body">
+        <div class="table-wrapper">
+          <table class="data-table" id="tablaHistorial">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Imagen</th>
+                <th>Archivo Original</th>
+                <th>Clasificación</th>
+                <th>Confianza</th>
+                <th>Dimensiones</th>
+                <th>Fecha y Hora</th>
+              </tr>
+            </thead>
+            <tbody id="tablaHistorialBody">
+              <tr><td colspan="7" class="table-empty">Cargando historial...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════ -->
+  <!-- TAB: SESIONES                                      -->
+  <!-- ══════════════════════════════════════════════════ -->
+  <section class="tab-content" id="tab-sesiones">
+    <div class="page-header">
+      <h1 class="page-title">Sesiones de Entrenamiento</h1>
+      <p class="page-subtitle">Historial de todos los entrenamientos ejecutados</p>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <div class="table-wrapper">
+          <table class="data-table" id="tablaSesiones">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Nombre</th>
+                <th>Épocas</th>
+                <th>Batch</th>
+                <th>Accuracy Val.</th>
+                <th>Loss Val.</th>
+                <th>Estado</th>
+                <th>Fecha</th>
+              </tr>
+            </thead>
+            <tbody id="tablaSesionesBody">
+              <tr><td colspan="8" class="table-empty">Cargando sesiones...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ══ TOAST NOTIFICATION ══ -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ══ MODAL IMAGEN ══ -->
+<div class="modal-overlay hidden" id="modalOverlay">
+  <div class="modal">
+    <button class="modal-close" id="modalClose"><i class="bi bi-x-lg"></i></button>
+    <img id="modalImg" src="" alt="Imagen ampliada" class="modal-img" />
+  </div>
+</div>
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>

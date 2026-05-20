@@ -1,0 +1,11 @@
+flask>=3.0.3
+flask-cors>=4.0.1
+tf-nightly-cpu
+scikit-learn>=1.4.2
+matplotlib>=3.8.4
+numpy>=1.26.4
+Pillow>=10.3.0
+pymysql>=1.1.1
+cryptography>=42.0.8
+python-dotenv>=1.0.1
+werkzeug>=3.0.3

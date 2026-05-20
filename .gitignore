@@ -1,0 +1,25 @@
+# Entornos virtuales
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Variables de entorno
+.env
+
+# Base de datos SQLite
+database/*.db
+
+# Modelos guardados (opcional, pero suelen ser pesados)
+models/*.keras
+models/*.h5
+
+# Archivos subidos y gráficos generados
+static/uploads/*
+!static/uploads/.gitkeep
+static/graficos/*
+!static/graficos/.gitkeep
+
+# Datos de entrenamiento dinámicos (opcional, para no subir imágenes pesadas)
+# data/train/*
+# data/val/*

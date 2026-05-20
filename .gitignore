@@ -4,8 +4,8 @@ env/
 __pycache__/
 *.pyc
 
-# Variables de entorno
-.env
+# Variables de entorno (comentado para permitir compartirlo con el equipo)
+# .env
 
 # Base de datos SQLite
 database/*.db

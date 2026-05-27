@@ -55,7 +55,7 @@ document.getElementById("sidebarToggle").addEventListener("click", () => {
 // ─────────────────────────────────────────────────────────
 // Instancias Chart.js
 // ─────────────────────────────────────────────────────────
-let chartCat = null, chartAct = null, chartTrain = null, chartReg = null;
+let chartCat = null, chartAct = null, chartTrain = null, chartReg = null, chartDoc = null;
 
 const CHART_DEFAULTS = {
   color: "#94a3b8",
@@ -160,10 +160,35 @@ async function cargarHistorial() {
 }
 
 // ─────────────────────────────────────────────────────────
-// INFERENCIA — Análisis de imagen
+// INFERENCIA — Análisis de imagen y documentos
 // ─────────────────────────────────────────────────────────
 let archivoSeleccionado = null;
+let documentoSeleccionado = null;
+let modoInferenciaActivo = "imagen";
 
+// Alternar entre modo imagen y modo documento
+window.switchModoInferencia = function(modo) {
+  modoInferenciaActivo = modo;
+  
+  const tabImg = document.getElementById("subtab-imagen");
+  const tabDoc = document.getElementById("subtab-documento");
+  const panelImg = document.getElementById("panel-carga-imagen");
+  const panelDoc = document.getElementById("panel-carga-documento");
+  
+  if (modo === "imagen") {
+    tabImg.classList.add("active");
+    tabDoc.classList.remove("active");
+    panelImg.classList.remove("hidden");
+    panelDoc.classList.add("hidden");
+  } else {
+    tabImg.classList.remove("active");
+    tabDoc.classList.add("active");
+    panelImg.classList.add("hidden");
+    panelDoc.classList.remove("hidden");
+  }
+};
+
+// ── MANEJO DE IMAGEN INDIVIDUAL ──
 const dropZone    = document.getElementById("dropZone");
 const inputImagen = document.getElementById("inputImagen");
 const previewImg  = document.getElementById("previewImg");
@@ -172,7 +197,9 @@ const btnAnalizar = document.getElementById("btnAnalizar");
 document.getElementById("btnSeleccionar").addEventListener("click", () => inputImagen.click());
 inputImagen.addEventListener("change", () => { if (inputImagen.files[0]) seleccionarArchivo(inputImagen.files[0]); });
 
-dropZone.addEventListener("click", () => inputImagen.click());
+dropZone.addEventListener("click", e => {
+  if (e.target !== inputImagen) inputImagen.click();
+});
 dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
 dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
 dropZone.addEventListener("drop", e => {
@@ -249,6 +276,7 @@ document.getElementById("btnAnalizar").addEventListener("click", async () => {
       </div>
     `;
     toast(`Clasificado como <strong>${data.clase}</strong> con ${data.confianza_pct}% de confianza`, "success");
+    cargarEstadisticas();
   } catch (e) {
     resultBody.innerHTML = `<div class="empty-state" style="color:var(--danger)"><i class="bi bi-x-octagon"></i><p>${e.message}</p></div>`;
     toast(e.message, "error");
@@ -282,6 +310,203 @@ async function enviarFeedback(id_imagen, clase_correcta) {
     toast(`Error al enviar feedback: ${e.message}`, "error");
   }
 }
+
+// ── MANEJO DE DOCUMENTOS PDF / DOCX ──
+const dropZoneDoc     = document.getElementById("dropZoneDoc");
+const inputDocumento  = document.getElementById("inputDocumento");
+const previewDoc      = document.getElementById("previewDoc");
+const btnSeleccionarDoc = document.getElementById("btnSeleccionarDoc");
+const btnAnalizarDoc  = document.getElementById("btnAnalizarDoc");
+
+if (btnSeleccionarDoc) btnSeleccionarDoc.addEventListener("click", () => inputDocumento.click());
+if (inputDocumento) inputDocumento.addEventListener("change", () => { if (inputDocumento.files[0]) seleccionarDocumento(inputDocumento.files[0]); });
+
+if (dropZoneDoc) {
+  dropZoneDoc.addEventListener("click", e => {
+    if (e.target !== inputDocumento) inputDocumento.click();
+  });
+  dropZoneDoc.addEventListener("dragover", e => { e.preventDefault(); dropZoneDoc.classList.add("drag-over"); });
+  dropZoneDoc.addEventListener("dragleave", () => dropZoneDoc.classList.remove("drag-over"));
+  dropZoneDoc.addEventListener("drop", e => {
+    e.preventDefault(); dropZoneDoc.classList.remove("drag-over");
+    const f = e.dataTransfer.files[0];
+    if (f && (f.name.endsWith(".pdf") || f.name.endsWith(".docx"))) seleccionarDocumento(f);
+    else toast("Solo se aceptan archivos PDF o DOCX", "warn");
+  });
+}
+
+function seleccionarDocumento(file) {
+  documentoSeleccionado = file;
+  
+  const docNameEl = document.getElementById("docName");
+  if (docNameEl) docNameEl.textContent = file.name;
+  
+  let sizeKB = (file.size / 1024).toFixed(1);
+  let sizeText = sizeKB > 1024 ? `${(sizeKB / 1024).toFixed(2)} MB` : `${sizeKB} KB`;
+  
+  const docSizeEl = document.getElementById("docSize");
+  if (docSizeEl) docSizeEl.textContent = sizeText;
+  
+  if (previewDoc) previewDoc.classList.remove("hidden");
+  
+  const dropZoneDocContent = document.getElementById("dropZoneDocContent");
+  if (dropZoneDocContent) dropZoneDocContent.classList.add("hidden");
+  
+  if (btnAnalizarDoc) btnAnalizarDoc.disabled = false;
+}
+
+if (btnAnalizarDoc) {
+  btnAnalizarDoc.addEventListener("click", async () => {
+    if (!documentoSeleccionado) return;
+    btnAnalizarDoc.disabled = true;
+    btnAnalizarDoc.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Analizando documento...`;
+    
+    const resultBody = document.getElementById("resultBody");
+    resultBody.innerHTML = `<div class="empty-state"><i class="bi bi-file-earmark-bar-graph" style="animation:spin 1s linear infinite; display: inline-block;"></i><p>Procesando documento... Extrayendo y clasificando imágenes.</p></div>`;
+
+    try {
+      const fd = new FormData();
+      fd.append("documento", documentoSeleccionado);
+      
+      const res = await fetch(`${API}/api/inferencia-documento`, { method: "POST", body: fd });
+      const data = await res.json();
+
+      if (!data.ok) throw new Error(data.error);
+
+      renderizarReporteDocumento(data);
+      toast(`Análisis de documento completado. ${data.total_imagenes} imágenes analizadas.`, "success");
+      cargarEstadisticas();
+    } catch (e) {
+      resultBody.innerHTML = `<div class="empty-state" style="color:var(--danger)"><i class="bi bi-x-octagon"></i><p>${e.message}</p></div>`;
+      toast(e.message, "error");
+    } finally {
+      btnAnalizarDoc.disabled = false;
+      btnAnalizarDoc.innerHTML = `<i class="bi bi-file-earmark-bar-graph"></i> Analizar Documento`;
+    }
+  });
+}
+
+function renderizarReporteDocumento(data) {
+  const resultBody = document.getElementById("resultBody");
+  const colores = { bache: "#ef4444", fisura: "#f59e0b", sano: "#10b981" };
+
+  if (data.total_imagenes === 0) {
+    resultBody.innerHTML = `
+      <div class="empty-state" style="color: var(--text-secondary)">
+        <i class="bi bi-file-earmark-x"></i>
+        <h4 style="margin-top: 10px; font-weight: 600;">Sin imágenes válidas</h4>
+        <p style="font-size: 13px; max-width: 280px; text-align: center;">${data.mensaje}</p>
+      </div>
+    `;
+    return;
+  }
+
+  resultBody.innerHTML = `
+    <div class="doc-report-container">
+      <div class="doc-report-header">
+        <div class="doc-title-row">
+          <i class="bi bi-file-earmark-bar-graph-fill doc-icon"></i>
+          <div>
+            <h3 class="doc-report-name">${data.nombre_original}</h3>
+            <span class="doc-report-meta">${data.total_imagenes} imágenes analizadas</span>
+          </div>
+        </div>
+        <div class="doc-status-badge" style="background:${data.color_estado}18; color:${data.color_estado}; border:1px solid ${data.color_estado}35">
+          <span class="status-badge-dot" style="background:${data.color_estado}"></span>
+          ${data.estado_general}
+        </div>
+      </div>
+      
+      <p class="doc-diagnostico">${data.diagnostico}</p>
+      
+      <div class="doc-metrics-grid">
+        <div class="doc-chart-box">
+          <h4 class="metrics-subtitle"><i class="bi bi-pie-chart-fill"></i> Daño Dominante (% Imgs)</h4>
+          <div class="doc-chart-canvas-wrapper">
+            <canvas id="chartDocConteo" height="150"></canvas>
+          </div>
+        </div>
+        <div class="doc-chart-box">
+          <h4 class="metrics-subtitle"><i class="bi bi-shield-shaded"></i> Severidad Promedio</h4>
+          <div style="display:flex; flex-direction:column; gap:10px; justify-content: center; height: calc(100% - 28px);">
+            ${Object.entries(data.distribucion_severidad).map(([cls, pct]) => `
+              <div class="prob-row" style="margin-bottom:0">
+                <span class="prob-label" style="text-transform:capitalize; width:60px;">${cls}</span>
+                <div class="progress-bar-wrap" style="flex:1">
+                  <div class="progress-bar-fill" style="width:${pct}%; background:${colores[cls]}"></div>
+                </div>
+                <span class="prob-pct" style="width:40px;">${pct}%</span>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </div>
+      
+      <h4 class="metrics-subtitle mt-4" style="margin-bottom:8px;"><i class="bi bi-images"></i> Imágenes Extraídas y Clasificadas</h4>
+      <div class="doc-extracted-grid">
+        ${data.imagenes_analizadas.map(img => `
+          <div class="doc-extracted-card" onclick="abrirModal('/static/${img.ruta_imagen.replace('static/', '')}')">
+            <div class="doc-extracted-img-wrap">
+              <img src="/static/${img.ruta_imagen.replace('static/', '')}" alt="${img.clase}" onerror="this.src='/static/img/placeholder.png'" />
+              <span class="doc-page-badge">Pág. ${img.pagina}</span>
+            </div>
+            <div class="doc-extracted-body">
+              <div class="doc-extracted-class">
+                <span class="pill pill-${img.clase}">${img.clase}</span>
+              </div>
+              <div class="doc-extracted-conf">
+                <i class="bi bi-patch-check-fill" style="color:${colores[img.clase]}"></i> ${img.confianza_pct}%
+              </div>
+            </div>
+          </div>
+        `).join("")}
+      </div>
+    </div>
+  `;
+
+  // Renderizar gráfico de torta dinámico para el documento
+  setTimeout(() => {
+    const ctx = document.getElementById("chartDocConteo");
+    if (!ctx) return;
+    
+    const labels = Object.keys(data.distribucion_conteo);
+    const vals   = Object.values(data.distribucion_conteo);
+    const bgColors = labels.map(c => colores[c] || "#6366f1");
+
+    if (chartDoc) chartDoc.destroy();
+    
+    chartDoc = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: labels.map(l => l.toUpperCase()),
+        datasets: [{
+          data: vals,
+          backgroundColor: bgColors,
+          borderColor: "#111827",
+          borderWidth: 2,
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: "right",
+            labels: {
+              color: "#94a3b8",
+              font: { family: "Inter", size: 10 },
+              boxWidth: 10,
+              padding: 6
+            }
+          }
+        },
+        cutout: "60%"
+      }
+    });
+  }, 100);
+}
+
 
 // ─────────────────────────────────────────────────────────
 // ENTRENAMIENTO CNN

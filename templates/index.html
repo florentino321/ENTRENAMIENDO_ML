@@ -175,13 +175,23 @@
   <!-- ══════════════════════════════════════════════════ -->
   <section class="tab-content" id="tab-inferencia">
     <div class="page-header">
-      <h1 class="page-title">Analizar Imagen</h1>
-      <p class="page-subtitle">Carga una imagen de pavimento para clasificarla con la CNN</p>
+      <h1 class="page-title">Analizar Pavimento</h1>
+      <p class="page-subtitle">Carga una imagen o un documento (PDF/Word) para clasificar y detectar daños con Inteligencia Artificial</p>
+    </div>
+
+    <!-- Selectores de sub-pestaña para alternar modo -->
+    <div class="subtabs-container">
+      <button class="subtab-btn active" id="subtab-imagen" onclick="switchModoInferencia('imagen')">
+        <i class="bi bi-image-fill"></i> Imagen Individual
+      </button>
+      <button class="subtab-btn" id="subtab-documento" onclick="switchModoInferencia('documento')">
+        <i class="bi bi-file-earmark-pdf-fill"></i> Documento (PDF / Word)
+      </button>
     </div>
 
     <div class="inferencia-layout">
-      <!-- Panel de carga -->
-      <div class="card upload-card">
+      <!-- PANEL DE CARGA: Modo Imagen -->
+      <div class="card upload-card" id="panel-carga-imagen">
         <div class="card-header">
           <h3 class="card-title"><i class="bi bi-cloud-arrow-up-fill"></i> Cargar Imagen</h3>
         </div>
@@ -202,21 +212,55 @@
               <i class="bi bi-folder2-open"></i> Seleccionar Archivo
             </button>
             <button class="btn btn-primary" id="btnAnalizar" disabled>
-              <i class="bi bi-cpu"></i> Analizar con IA
+              <i class="bi bi-cpu"></i> Analizar Imagen
             </button>
           </div>
         </div>
       </div>
 
-      <!-- Panel de resultados -->
-      <div class="card result-card" id="resultCard">
+      <!-- PANEL DE CARGA: Modo Documento -->
+      <div class="card upload-card hidden" id="panel-carga-documento">
+        <div class="card-header">
+          <h3 class="card-title"><i class="bi bi-file-earmark-arrow-up-fill"></i> Cargar Documento</h3>
+        </div>
+        <div class="card-body">
+          <div class="drop-zone" id="dropZoneDoc">
+            <input type="file" id="inputDocumento" accept=".pdf,.docx" hidden />
+            <div class="drop-zone-content" id="dropZoneDocContent">
+              <div class="drop-icon" style="color: var(--accent2)"><i class="bi bi-file-earmark-pdf"></i></div>
+              <p class="drop-title">Arrastra tu documento aquí</p>
+              <p class="drop-sub">o haz clic para seleccionar</p>
+              <p class="drop-formats">Formatos soportados: PDF, DOCX · Máx 32 MB</p>
+            </div>
+            <div id="previewDoc" class="preview-doc-info hidden">
+              <i class="bi bi-file-earmark-check-fill doc-preview-icon"></i>
+              <div class="doc-preview-details">
+                <span id="docName" class="doc-preview-name">nombre_documento.pdf</span>
+                <span id="docSize" class="doc-preview-size">0.0 KB</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="upload-actions">
+            <button class="btn btn-outline" id="btnSeleccionarDoc">
+              <i class="bi bi-folder2-open"></i> Seleccionar Documento
+            </button>
+            <button class="btn btn-primary" id="btnAnalizarDoc" disabled style="background-color: var(--accent2); border-color: var(--accent2)">
+              <i class="bi bi-file-earmark-bar-graph"></i> Analizar Documento
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- PANEL DE RESULTADOS (Compartido con reporte dinámico) -->
+      <div class="card result-card" id="resultCard" style="grid-column: span 1 / span 2;">
         <div class="card-header">
           <h3 class="card-title"><i class="bi bi-clipboard-data-fill"></i> Resultado del Análisis</h3>
         </div>
-        <div class="card-body" id="resultBody">
+        <div class="card-body" id="resultBody" style="max-height: 580px; overflow-y: auto;">
           <div class="empty-state">
             <i class="bi bi-cpu"></i>
-            <p>Carga una imagen para ver el resultado</p>
+            <p>Carga una imagen o un documento y presiona analizar para ver los resultados</p>
           </div>
         </div>
       </div>
